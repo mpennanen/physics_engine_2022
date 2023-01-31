@@ -14,8 +14,11 @@ void drawRectangle(Rectangle* rect);
 
 int main()
 {
+    // Ground 
+    rectangles.push_back(new Rectangle(800, 24, 1600, 64,0,0.01,0.01,true));
 
-    rectangles.push_back(new Rectangle(800, 32, 1600, 64,0,0,0,true));
+
+
     // Initialize GLFW and create a window
     glfwInit();
     GLFWwindow* window = glfwCreateWindow(1600, 900, "Click to Draw Rectangles", nullptr, nullptr);
@@ -118,7 +121,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         Vec2 mouse_drag_delta = Vec2(xpos,height-ypos) - mouse_drag_start;
-        rectangles.push_back(new Rectangle(mouse_drag_start.x, mouse_drag_start.y, 64, 64, 0, 1.0, 0.01, false));
+        rectangles.push_back(new Rectangle(mouse_drag_start.x, mouse_drag_start.y, 64, 64, 0, 0.5, 0.01, false));
         rectangles[rectangles.size() - 1]->velocity = mouse_drag_delta * 0.01;
 
         mouse_drag = false;

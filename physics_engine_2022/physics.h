@@ -229,6 +229,7 @@ Vec2 calculateMTV(Rectangle* rectA, Rectangle* rectB) {
 	return mtv;
 }
 
+
 void resolveCollision(Rectangle* rect1, Rectangle* rect2) {
 	// Calculate the MTV (Minimum Translation Vector)
 	Vec2 mtv = calculateMTV(rect1, rect2);
