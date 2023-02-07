@@ -1,9 +1,10 @@
 #include <GLFW/glfw3.h>
-#include <cstdlib>
 #include <iostream>
 #include <vector>
 #include "physics.h"
+#include <ctime>
 
+int spawn_delay = 1 * CLOCKS_PER_SEC;
 bool mouse_drag = false;
 Vec2 mouse_drag_start = Vec2(0, 0);
 std::vector<Rectangle*> rectangles;
@@ -15,7 +16,7 @@ void drawRectangle(Rectangle* rect);
 int main()
 {
     // Ground 
-    rectangles.push_back(new Rectangle(800, 24, 1600, 64,0,0.01,0.01,true));
+    rectangles.push_back(new Rectangle(800, 224, 800, 100,0,0.01,0.01,true));
 
 
 
@@ -33,11 +34,18 @@ int main()
     glViewport(0, 0, width, height);
     glOrtho(0.0, (double)width, 0.0, (double)height, -1.0, 1.0);
 
-
+    clock_t time_now = clock();
+    srand(time(NULL));
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
-
+        // Spawn timer
+        if ((clock() - time_now) > spawn_delay)
+        {
+            rectangles.push_back(new Rectangle(400+rand() % 800, 800, 64, 64, 0, 0.5, 0.01, false));
+            rectangles[rectangles.size() - 1]->velocity = Vec2(0, 0);
+            time_now = clock();
+        }
         // Clear the screen to white
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -75,6 +83,11 @@ int main()
             }
             rectangles[i]->update();
             drawRectangle(rectangles[i]);
+            if (rectangles[i]->position.y < -100 || rectangles[i]->position.x > 1700 || rectangles[i]->position.x < -100 || rectangles[i]->position.y > 1700)
+            {
+                delete rectangles[i];
+                rectangles.erase(rectangles.begin() + i);
+            }
 
         }
         // Swap buffers and poll events

@@ -4,7 +4,7 @@
 #include <iostream>
 #include "Vec2.h"
 #include "debug.h"
-
+#include <cstdlib>
 
 class Rectangle
 {
@@ -18,6 +18,7 @@ public:
 	double mass;
 	double restitution;
 	double momentOfInertia;
+	double angular_damping;
 	Vec2 position = Vec2(0, 0);
 	Vec2 velocity = Vec2(0, 0);
 	std::vector<Vec2> vertex_vector;
@@ -48,6 +49,7 @@ public:
 			position.y += velocity.y;
 			updateVertexPositions(velocity);
 			angle += angular_velocity;
+			angular_velocity *= angular_damping;
 			rotate(angular_velocity,position);
 			/*for (auto& vertex : vertex_vector) {
 				vertex.x += velocity.x;
@@ -72,7 +74,7 @@ public:
 		Vec2 closestPoint = Vec2(0,0);
 
 		// Rotate the point about the center of the rectangle to align with the orientation of the rectangle
-		//Vec2 rotatedPoint = point.rotate(position, -orientation);
+		point.rotate(position, -angle);
 
 		// Loop over all the edges of the rectangle
 		for (const auto& edge : edge_vector) {
@@ -87,7 +89,8 @@ public:
 		}
 
 		// Rotate the closest point back to the original orientation
-		return closestPoint;//.rotate(position, orientation);
+		closestPoint.rotate(position, angle);
+		return closestPoint;
 	}
 	// Constructor
 	Rectangle(double _x, double _y, double w, double h, double _angle,double _mass, double _restitution, bool _solid)
@@ -95,13 +98,15 @@ public:
 		position.x = _x;
 		position.y = _y;
 		angle = _angle;
-		angular_velocity = 0.01;
-		gravity =  0.0981;
+		angular_velocity = 0.1 - rand() % 20 / 100.0;
+		angular_damping = 0.99;
+		gravity = 0.00981;
 		width = w;
 		height = h;
 		mass = _mass;
 
-		momentOfInertia = mass * (width * width + height * height) / 12;
+
+		momentOfInertia = mass * (width * width + height * height);// / 12;
 
 		restitution = _restitution;
 		solid = _solid;
@@ -194,6 +199,7 @@ Vec2 calculateMTV(Rectangle* rectA, Rectangle* rectB) {
 		}
 	}
 
+	std::cout << "Finding smallest overlap...";
 	for (auto& perpendicular_line : perpendicular_stack)
 	{
 		double amin = std::numeric_limits<double>::max();
@@ -217,14 +223,15 @@ Vec2 calculateMTV(Rectangle* rectA, Rectangle* rectB) {
 
 		// Calculate overlap
 		double overlap = std::min(amax - bmin, bmax - amin);
-		debugDouble("Overlap", overlap);
-		debugDouble("minOverlap", minOverlap);
+
 		// Check if this is the smallest overlap found so far
 		if (overlap < minOverlap) {
 			minOverlap = overlap;
 			mtv = perpendicular_line.normalized() * overlap;
 		}
+		std::cout << " | " << minOverlap;
 	}
+	std::cout << std::endl;
 	debugVec2("MTV", mtv);
 	return mtv;
 }
@@ -238,7 +245,7 @@ void resolveCollision(Rectangle* rect1, Rectangle* rect2) {
 
 	// Calculate the relative velocity in terms of the MTV
 	double velAlongNormal = dot(rv, mtv.normalized());
-
+	std::wcout << "velAlongNormal: " << velAlongNormal << std::endl;
 	// Do not respond if velocities are separating
 	if (velAlongNormal <= 0) {
 		// Calculate the impulse scalar
@@ -261,6 +268,19 @@ void resolveCollision(Rectangle* rect1, Rectangle* rect2) {
 		double L2 = rect2->momentOfInertia * rect2->angular_velocity;
 		double jr = -(1 + e) * (L1 + L2) / (1 / rect1->mass + 1 / rect2->mass + (r1 * r1) / rect1->momentOfInertia + (r2 * r2) / rect2->momentOfInertia);
 
+		// Update positions
+		if (rect1->solid == false)
+		{
+			rect1->position += mtv * -0.5;
+			rect1->updateVertexPositions(mtv * -0.5);
+		}
+
+		if (rect2->solid == false)
+		{
+			rect2->position += mtv * 0.5;
+			rect2->updateVertexPositions(mtv * 0.5);
+		}
+
 		// Apply the impulses to the rectangles' velocities and angular velocities
 		rect1->velocity -= impulse * (1 / rect1->mass);
 		rect1->angular_velocity -= jr * r1 / rect1->momentOfInertia;
@@ -268,19 +288,6 @@ void resolveCollision(Rectangle* rect1, Rectangle* rect2) {
 		rect2->velocity += impulse * (1 / rect2->mass);
 		rect2->angular_velocity += jr * r2 / rect2->momentOfInertia;
 
-		// Update positions
-		if (rect1->solid == false)
-		{
-			rect1->position += mtv * 0.5;
-			rect1->updateVertexPositions(mtv * 0.5);
-		}
-
-		if (rect2->solid == false)
-		{
-			rect2->position += mtv * -0.5;
-			rect2->updateVertexPositions(mtv * -0.5);
-		}
-
-		std::cout << "j: " << j << " e: " << e << " velAlongNormal: " << velAlongNormal << std::endl;
+		std::cout << "j: " << j << " e: " << e << std::endl;
 	}
 }

@@ -37,9 +37,21 @@ public:
 		return { x * other, y * other };
 	}
 
+	void rotate(Vec2 vec, double a)
+	{
+		x = cos(a) * vec.x - sin(a) * vec.y;
+		y = sin(a) * vec.x + cos(a) * vec.y;
+	}
+
 	Vec2 normalized() {
 		double length = sqrt(x * x + y * y);
-		return Vec2(x / length, y / length);
+		Vec2 _result(x, y);
+		if (length > 0)
+		{
+			_result.x /= length;
+			_result.y /= length;
+		}
+		return _result;
 	}
 	double length() const {
 		return sqrt(x * x + y * y);
